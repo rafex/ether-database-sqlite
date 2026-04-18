@@ -8,19 +8,21 @@
 		<groupId>dev.rafex.ether.parent</groupId>
 		<artifactId>ether-parent</artifactId>
 		<version>9.5.5-SNAPSHOT</version>
-		<relativePath>../../ether-parent/ether-parent/pom.xml</relativePath>
+		<relativePath>../../../../../ether-parent/ether-parent/pom.xml</relativePath>
 	</parent>
 
 	<groupId>dev.rafex.ether.database</groupId>
-	<artifactId>ether-database-postgres</artifactId>
+	<artifactId>ether-database-sqlite</artifactId>
 	<version>9.5.5-SNAPSHOT</version>
 
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
-	<url>https://rafex.dev/ether/database/postgres</url>
+	<url>https://rafex.dev/ether/database/sqlite</url>
 
 	<description>
-		PostgreSQL-specific JDBC helpers for the Ether database stack.
+		SQLite-specific JDBC helpers for the Ether database stack.
+		Includes Write-Ahead Logging (WAL) support and SQLite-specific
+		parameter types and error handling.
 	</description>
 
 	<licenses>
@@ -33,7 +35,7 @@
 
 	<issueManagement>
 		<system>GitHub Issues</system>
-		<url>https://github.com/rafex/ether-database-postgres/issues</url>
+		<url>https://github.com/rafex/ether-database-sqlite/issues</url>
 	</issueManagement>
 
 	<developers>
@@ -46,9 +48,9 @@
 	</developers>
 
 	<scm>
-		<connection>scm:git:https://github.com/rafex/ether-database-postgres.git</connection>
-		<developerConnection>scm:git:https://github.com/rafex/ether-database-postgres.git</developerConnection>
-		<url>https://github.com/rafex/ether-database-postgres</url>
+		<connection>scm:git:https://github.com/rafex/ether-database-sqlite.git</connection>
+		<developerConnection>scm:git:https://github.com/rafex/ether-database-sqlite.git</developerConnection>
+		<url>https://github.com/rafex/ether-database-sqlite</url>
 	</scm>
 
 	<properties>
@@ -62,8 +64,24 @@
 			<artifactId>ether-database-core</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>dev.rafex.ether.jdbc</groupId>
+			<artifactId>ether-jdbc</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>5.11.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-junit-jupiter</artifactId>
+			<version>5.11.0</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -74,6 +92,14 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>flatten-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.5.5</version>
+				<configuration>
+					<argLine>-Dnet.bytebuddy.experimental=true</argLine>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
