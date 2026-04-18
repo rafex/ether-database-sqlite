@@ -17,7 +17,7 @@ package dev.rafex.ether.database.sqlite;
  * all copies or substantial portions of the Software.
  * 
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO the WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
@@ -27,11 +27,14 @@ package dev.rafex.ether.database.sqlite;
  */
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.Test;
 
+import dev.rafex.ether.database.core.exceptions.DatabaseAccessException;
 import dev.rafex.ether.database.sqlite.errors.SQLiteErrorClassifier;
 import dev.rafex.ether.database.sqlite.errors.SQLiteErrorCodes;
 
@@ -40,23 +43,61 @@ class SQLiteErrorClassifierTest {
     @Test
     void shouldClassifyKnownErrorCodes() {
         // SQLException constructor: (String reason, String sqlState, int vendorCode)
-        assertEquals(SQLiteErrorClassifier.Category.UNIQUE_VIOLATION,
-                SQLiteErrorClassifier.classify(new SQLException("duplicate", null, SQLiteErrorCodes.UNIQUE_VIOLATION)));
-        assertEquals(SQLiteErrorClassifier.Category.CONCURRENCY_CONFLICT,
-                SQLiteErrorClassifier.classify(new SQLException("locked", null, SQLiteErrorCodes.LOCKED)));
-        assertEquals(SQLiteErrorClassifier.Category.FOREIGN_KEY_VIOLATION,
-                SQLiteErrorClassifier.classify(new SQLException("foreign key", null, SQLiteErrorCodes.FOREIGN_KEY_VIOLATION)));
-        assertEquals(SQLiteErrorClassifier.Category.NOT_NULL_VIOLATION,
-                SQLiteErrorClassifier.classify(new SQLException("not null", null, SQLiteErrorCodes.NOT_NULL_VIOLATION)));
-        assertEquals(SQLiteErrorClassifier.Category.CHECK_VIOLATION,
-                SQLiteErrorClassifier.classify(new SQLException("check", null, SQLiteErrorCodes.CHECK_VIOLATION)));
-        assertEquals(SQLiteErrorClassifier.Category.CONCURRENCY_CONFLICT,
-                SQLiteErrorClassifier.classify(new SQLException("busy", null, SQLiteErrorCodes.BUSY)));
+        SQLException uniqueViolation = new SQLException("duplicate", null, SQLiteErrorCodes.UNIQUE_VIOLATION);
+        DatabaseAccessException result1 = SQLiteErrorClassifier.classify(uniqueViolation);
+        assertNotNull(result1);
+        assertEquals("duplicate", result1.getMessage());
+        assertEquals(uniqueViolation, result1.getCause());
+        
+        SQLException locked = new SQLException("locked", null, SQLiteErrorCodes.LOCKED);
+        DatabaseAccessException result2 = SQLiteErrorClassifier.classify(locked);
+        assertNotNull(result2);
+        assertEquals("locked", result2.getMessage());
+        assertEquals(locked, result2.getCause());
+        
+        SQLException foreignKey = new SQLException("foreign key", null, SQLiteErrorCodes.FOREIGN_KEY_VIOLATION);
+        DatabaseAccessException result3 = SQLiteErrorClassifier.classify(foreignKey);
+        assertNotNull(result3);
+        assertEquals("foreign key", result3.getMessage());
+        assertEquals(foreignKey, result3.getCause());
+        
+        SQLException notNull = new SQLException("not null", null, SQLiteErrorCodes.NOT_NULL_VIOLATION);
+        DatabaseAccessException result4 = SQLiteErrorClassifier.classify(notNull);
+        assertNotNull(result4);
+        assertEquals("not null", result4.getMessage());
+        assertEquals(notNull, result4.getCause());
+        
+        SQLException check = new SQLException("check", null, SQLiteErrorCodes.CHECK_VIOLATION);
+        DatabaseAccessException result5 = SQLiteErrorClassifier.classify(check);
+        assertNotNull(result5);
+        assertEquals("check", result5.getMessage());
+        assertEquals(check, result5.getCause());
+        
+        SQLException busy = new SQLException("busy", null, SQLiteErrorCodes.BUSY);
+        DatabaseAccessException result6 = SQLiteErrorClassifier.classify(busy);
+        assertNotNull(result6);
+        assertEquals("busy", result6.getMessage());
+        assertEquals(busy, result6.getCause());
     }
 
     @Test
-    void shouldReturnOtherForUnknownErrorCode() {
-        assertEquals(SQLiteErrorClassifier.Category.OTHER,
-                SQLiteErrorClassifier.classify(new SQLException("unknown", null, 9999)));
+    void shouldClassifyWithCustomMessage() {
+        SQLException exception = new SQLException("duplicate", null, SQLiteErrorCodes.UNIQUE_VIOLATION);
+        DatabaseAccessException result = SQLiteErrorClassifier.classify("Custom message", exception);
+        
+        assertNotNull(result);
+        assertEquals("Custom message", result.getMessage());
+        assertEquals(exception, result.getCause());
+    }
+
+    @Test
+    void shouldThrowNullPointerExceptionForNullException() {
+        assertThrows(NullPointerException.class, () -> {
+            SQLiteErrorClassifier.classify((SQLException) null);
+        });
+        
+        assertThrows(NullPointerException.class, () -> {
+            SQLiteErrorClassifier.classify("message", null);
+        });
     }
 }

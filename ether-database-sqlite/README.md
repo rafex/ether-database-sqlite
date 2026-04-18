@@ -34,7 +34,83 @@ implementation 'dev.rafex.ether.database:ether-database-sqlite:9.5.5-SNAPSHOT'
 
 ## Quick Start
 
-### Basic Usage
+### Basic Usage with SQLiteDatabaseClient
+
+```java
+import dev.rafex.ether.database.sqlite.client.SQLiteDatabaseClient;
+import dev.rafex.ether.database.sqlite.config.SQLiteConfig;
+import dev.rafex.ether.database.sqlite.config.JournalMode;
+import dev.rafex.ether.database.sqlite.config.SynchronousMode;
+import dev.rafex.ether.database.core.mapping.RowMapper;
+import dev.rafex.ether.database.core.sql.SqlQuery;
+
+import javax.sql.DataSource;
+import org.sqlite.SQLiteDataSource;
+
+// Create a SQLite DataSource
+SQLiteDataSource dataSource = new SQLiteDataSource();
+dataSource.setUrl("jdbc:sqlite:test.db");
+
+// Create SQLiteDatabaseClient with WAL enabled
+SQLiteDatabaseClient db = SQLiteDatabaseClient.builder(dataSource)
+    .withWalEnabled()
+    .withSynchronousMode(SynchronousMode.NORMAL)
+    .withForeignKeys(true)
+    .withBusyTimeout(10000)
+    .build();
+
+// Create a table
+db.execute(SqlQuery.of(
+    "CREATE TABLE IF NOT EXISTS users (" +
+    "  id INTEGER PRIMARY KEY," +
+    "  name TEXT NOT NULL," +
+    "  email TEXT UNIQUE NOT NULL" +
+    ")"
+));
+
+// Insert a user
+db.execute(SqlQuery.of(
+    "INSERT INTO users (name, email) VALUES (?, ?)",
+    stmt -> {
+        stmt.setString(1, "John Doe");
+        stmt.setString(2, "john@example.com");
+    }
+));
+
+// Query users with RowMapper
+RowMapper<User> mapper = rs -> new User(
+    rs.getInt("id"),
+    rs.getString("name"),
+    rs.getString("email")
+);
+
+List<User> users = db.queryList(SqlQuery.of("SELECT * FROM users"), mapper);
+
+// Query single user
+Optional<User> user = db.queryOne(
+    SqlQuery.of("SELECT * FROM users WHERE id = ?", stmt -> stmt.setInt(1, 1)),
+    mapper
+);
+
+// Batch insert
+List<StatementBinder> binders = List.of(
+    stmt -> {
+        stmt.setString(1, "Alice");
+        stmt.setString(2, "alice@example.com");
+    },
+    stmt -> {
+        stmt.setString(1, "Bob");
+        stmt.setString(2, "bob@example.com");
+    }
+);
+
+long[] results = db.batch(
+    "INSERT INTO users (name, email) VALUES (?, ?)",
+    binders
+);
+```
+
+### Direct Configuration Usage
 
 ```java
 import dev.rafex.ether.database.sqlite.errors.SQLiteErrorClassifier;
@@ -70,6 +146,39 @@ try {
     RuntimeException classified = SQLiteErrorClassifier.classify(e);
     // classified will be DataIntegrityViolationException for UNIQUE violations, etc.
 }
+```
+
+### SQLiteDatabaseClient Integration
+
+The `SQLiteDatabaseClient` class extends `JdbcDatabaseClient` from `ether-jdbc` and provides SQLite-specific features:
+
+```java
+import dev.rafex.ether.database.sqlite.client.SQLiteDatabaseClient;
+import dev.rafex.ether.database.sqlite.config.SQLiteConfig;
+
+// Create with builder pattern
+SQLiteDatabaseClient db = SQLiteDatabaseClient.builder(dataSource)
+    .withWalEnabled()                    // Enable Write-Ahead Logging
+    .withSynchronousMode(SynchronousMode.NORMAL)
+    .withForeignKeys(true)              // Enable foreign key constraints
+    .withBusyTimeout(10000)             // 10 second busy timeout
+    .build();
+
+// Or create with custom configuration
+SQLiteConfig config = SQLiteConfig.builder()
+    .journalMode(JournalMode.WAL)
+    .synchronousMode(SynchronousMode.NORMAL)
+    .foreignKeys(true)
+    .busyTimeout(10000)
+    .build();
+
+SQLiteDatabaseClient db = new SQLiteDatabaseClient(dataSource, config);
+
+// All operations automatically apply SQLite configuration
+// and classify SQLite errors appropriately
+
+// Get the configuration (if present)
+Optional<SQLiteConfig> config = db.getConfig();
 ```
 
 ### Error Classification
@@ -186,6 +295,7 @@ mvn test
 
 - Java 25 or higher
 - `ether-database-core` (provided)
+- `ether-jdbc` (provided) - JDBC implementation base
 - SQLite JDBC driver (runtime dependency, not included)
 
 ## License

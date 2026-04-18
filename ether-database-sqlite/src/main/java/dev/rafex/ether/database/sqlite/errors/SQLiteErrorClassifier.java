@@ -29,33 +29,42 @@ package dev.rafex.ether.database.sqlite.errors;
 import java.sql.SQLException;
 import java.util.Objects;
 
-public final class SQLiteErrorClassifier {
+import dev.rafex.ether.database.core.exceptions.DatabaseAccessException;
 
-    public enum Category {
-        UNIQUE_VIOLATION, FOREIGN_KEY_VIOLATION, NOT_NULL_VIOLATION, CHECK_VIOLATION, CONCURRENCY_CONFLICT, OTHER
-    }
+/**
+ * Classifies SQLite errors.
+ * <p>
+ * Currently returns {@link DatabaseAccessException} for all SQLite errors.
+ * In the future, this could be extended to return more specific exception types.
+ */
+public final class SQLiteErrorClassifier {
 
     private SQLiteErrorClassifier() {
     }
 
-    public static Category classify(final SQLException exception) {
+    /**
+     * Classifies a SQLite exception.
+     *
+     * @param exception the SQL exception to classify
+     * @return a runtime exception (currently always {@link DatabaseAccessException})
+     * @throws NullPointerException if {@code exception} is {@code null}
+     */
+    public static DatabaseAccessException classify(final SQLException exception) {
         Objects.requireNonNull(exception, "exception");
-        final int errorCode = exception.getErrorCode();
-        if (errorCode == SQLiteErrorCodes.UNIQUE_VIOLATION) {
-            return Category.UNIQUE_VIOLATION;
-        }
-        if (errorCode == SQLiteErrorCodes.FOREIGN_KEY_VIOLATION) {
-            return Category.FOREIGN_KEY_VIOLATION;
-        }
-        if (errorCode == SQLiteErrorCodes.NOT_NULL_VIOLATION) {
-            return Category.NOT_NULL_VIOLATION;
-        }
-        if (errorCode == SQLiteErrorCodes.CHECK_VIOLATION) {
-            return Category.CHECK_VIOLATION;
-        }
-        if (errorCode == SQLiteErrorCodes.BUSY || errorCode == SQLiteErrorCodes.LOCKED) {
-            return Category.CONCURRENCY_CONFLICT;
-        }
-        return Category.OTHER;
+        final String message = exception.getMessage();
+        return new DatabaseAccessException(message, exception);
+    }
+
+    /**
+     * Classifies a SQLite exception with a custom message.
+     *
+     * @param message the custom error message
+     * @param exception the SQL exception to classify
+     * @return a runtime exception (currently always {@link DatabaseAccessException})
+     * @throws NullPointerException if {@code exception} is {@code null}
+     */
+    public static DatabaseAccessException classify(final String message, final SQLException exception) {
+        Objects.requireNonNull(exception, "exception");
+        return new DatabaseAccessException(message, exception);
     }
 }
