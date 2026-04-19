@@ -62,14 +62,17 @@
 		<dependency>
 			<groupId>dev.rafex.ether.database</groupId>
 			<artifactId>ether-database-core</artifactId>
+			<version>9.5.5-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>dev.rafex.ether.jdbc</groupId>
 			<artifactId>ether-jdbc</artifactId>
+			<version>9.5.5-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
+			<version>5.10.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -92,6 +95,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>flatten-maven-plugin</artifactId>
+				<version>1.7.0</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
